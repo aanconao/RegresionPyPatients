@@ -7,15 +7,13 @@ Created on Sat May  4 16:40:15 2024
 
 import pandas as pd
 import numpy as np
-from matplotlib import pyplot as plt
 import time
 
-from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
-
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, precision_score
+from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.ensemble import HistGradientBoostingRegressor
-from sklearn.metrics import r2_score
 
 start = time.time()
 
@@ -64,47 +62,39 @@ print(f"{df[df['hospital_death'] == 0].shape[0] / df.shape[0]} de supervivientes
 
 ##---------------------------------------------------------------------------------------------##
 
-# Se deben dividir los datos para variable dependiente (Y) y variables independientes (X)
+##----------------------------------------REGRESIÓN LOGÍSTICA--------------------------------------
 
-y = df['hospital_death']
-x = df.drop('hospital_death', axis=1)
+# Codificación de la variable categórica 'hospital_death'
+encoder = LabelEncoder()
+y = encoder.fit_transform(df['hospital_death'])
 
-#codificar los valores string para que se pueda usar en el analisis
-x = pd.get_dummies(x)
+# Separación de datos en conjuntos de entrenamiento y prueba
+X = df.drop('hospital_death', axis=1)
+x = pd.get_dummies(X)
 
-##----------------------------------------REGRESION LINEAL------------------------------------------
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, random_state=42)
 
-## Imputacion de valores ya que el LinearRegression no puede trabajar con valores faltantes
+# Imputación de valores faltantes
 imputer = SimpleImputer(strategy='mean')
-x_imputed = pd.DataFrame(imputer.fit_transform(x), columns=x.columns)
+x_train_imputed = imputer.fit_transform(x_train)
+x_test_imputed = imputer.transform(x_test)
 
-x_train, x_test, y_train, y_test = train_test_split(x_imputed, y, test_size=0.25, random_state=42)
-#modelo de regresion
-reg = LinearRegression().fit(x_train, y_train)
+# Creación del modelo de regresión logística
+model = LogisticRegression()
 
-#prediccion sobre los datos con los que haremos las pruebas
-y_pred = reg.predict(x_test)
+# Entrenamiento del modelo
+model.fit(x_train_imputed, y_train)
 
-##Precision
-r2 = r2_score(y_test, y_pred)
-print(f"Precision con Regresion lineal: {r2}")
+# Predicciones sobre el conjunto de prueba
+y_pred = model.predict(x_test_imputed)
 
-#--------------------------------------HIST REGRESSOR-------------------------------------------
-x_train2, x_test2, y_train2, y_test2 = train_test_split(x, y, test_size=0.25, random_state=42)
+# Evaluación del rendimiento
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
 
-#modelo de regresion
-reg2 = HistGradientBoostingRegressor().fit(x_train, y_train)
+print(f"Precisión: {accuracy:.3f}")
+print(f"Precisión: {precision:.3f}")
 
-
-#prediccion sobre los datos con los que haremos las pruebas
-y_pred2 = reg2.predict(x_test)
-
-##Precision
-
-r2H = r2_score(y_test, y_pred2)
-
-print(f"Precision con Hist: {r2H}")
-
-#--------------------------------
+#-------------------------------------------
 
 print(f"Total time: {round(time.time() - start,3)}s")
