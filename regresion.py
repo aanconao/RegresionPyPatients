@@ -80,7 +80,7 @@ x_train_imputed = imputer.fit_transform(x_train)
 x_test_imputed = imputer.transform(x_test)
 
 # Creación del modelo de regresión logística
-model = LogisticRegression()
+model = LogisticRegression(max_iter=1000)
 
 # Entrenamiento del modelo
 model.fit(x_train_imputed, y_train)
